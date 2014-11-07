@@ -1,0 +1,251 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>AS2_main</title><meta name="generator" content="MATLAB 8.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2014-10-28"><meta name="DC.source" content="AS2_main.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, tt, code { font-size:12px; }
+pre { margin:0px 0px 20px; }
+pre.error { color:red; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput">img_filename = <span class="string">'./images/cartman.jpg'</span>;
+mask_filename = <span class="string">'./masks/cartmanMask.mat'</span>;
+
+img = imread(img_filename);
+img2 = img;
+img2 = im2double(img2);
+gaussFilter = fspecial(<span class="string">'gaussian'</span>,[5 5], 200);
+img = imfilter(img, gaussFilter, <span class="string">'replicate'</span>);
+img = imresize(img, .55);
+img2 = imresize(img2, .55);
+img = im2double(img);
+
+importfile(mask_filename);
+mask = cartmanMask;
+mask = imresize(mask, .55);
+[imh,imw,channels] = size(img);
+[maskh, maskw, mask_channels] = size(mask);
+assert(imh == maskh);  <span class="comment">%make sure mask and image are of equal height</span>
+assert(imw == maskw);  <span class="comment">%make sure mask and image are of equal width</span>
+
+<span class="comment">%Add path to Maxflow Code</span>
+addpath(<span class="string">'./maxflow'</span>);
+
+<span class="comment">% Convert truecolor/grayscale images to required three-channel format</span>
+<span class="keyword">if</span> channels == 3
+    errMessage = <span class="string">'no Error'</span>;
+<span class="keyword">elseif</span> channels == 1
+    img = cat(3, img, img, img);
+<span class="keyword">else</span>
+    errMessage = <span class="string">'Invalid input: Image must be in RGB (triple-channel) or trueColor format'</span>
+    <span class="keyword">break</span>
+<span class="keyword">end</span>
+
+<span class="keyword">if</span> size(mask, 3) == 3
+    errMessage = <span class="string">'no Error'</span>;
+<span class="keyword">elseif</span> size(mask,3) == 1
+    mask = mask(:, :, 1);
+<span class="keyword">end</span>
+
+<span class="comment">%Call helper function to generate pixel-color histograms for foreground</span>
+<span class="comment">%and background</span>
+<span class="comment">%Foreground and Background are determined by input mask here</span>
+[foreground, background, intervals] = createHistograms(img, mask);
+
+<span class="comment">%Call helper function to build sparse graphs to input into Maxflow</span>
+<span class="comment">%algorithm</span>
+[A,T] = buildGraphs(foreground, background, intervals, img);
+T = sparse(T);
+<span class="comment">%A = A + A';</span>
+<span class="comment">%Call third-party Maxflow algorithm and reshape result</span>
+[~, newMask] = maxflow(A,T);
+newMask = logical(reshape(newMask,imh,imw));
+newMask = cat(3,newMask,newMask,newMask);
+
+foreground_img = img2.*~newMask;
+background_img = img2.*newMask;
+figure
+imshow(foreground_img)
+hold <span class="string">on</span>
+title(<span class="string">'Foreground of Input based on Min-Cut/Max-Flow'</span>);
+
+figure
+title(<span class="string">'Background of Input based on Min-Cut/Max-Flow'</span>);
+imshow(background_img);
+
+
+newMask = ~newMask;
+
+destination = imread(<span class="string">'oldWell.jpg'</span>);
+                <span class="comment">%read in the sample destination image</span>
+destination = 1*im2double(destination);
+destination = imresize(destination, .5);
+
+offsetY = 30;
+offsetX = 700;
+
+[paddedIMG, paddedMASK] = padToFit(img2(:,15:end,:), newMask(:,15:end,:), destination,[offsetX,offsetY]);
+
+
+
+final = zeros(size(destination));
+
+
+
+figure
+imshow(poissonBlend(paddedIMG,paddedMASK,destination))
+                <span class="comment">%Call my poissonBlend method on Image</span>
+                <span class="comment">%Display alpha-blended image result</span>
+</pre><pre class="codeoutput">Warning: Image is too big to fit on screen;
+displaying at 50% 
+</pre><img vspace="5" hspace="5" src="AS2_main_01.png" alt=""> <img vspace="5" hspace="5" src="AS2_main_02.png" alt=""> <img vspace="5" hspace="5" src="AS2_main_03.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2013a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+img_filename = './images/cartman.jpg';
+mask_filename = './masks/cartmanMask.mat';
+
+img = imread(img_filename);
+img2 = img;
+img2 = im2double(img2);
+gaussFilter = fspecial('gaussian',[5 5], 200);
+img = imfilter(img, gaussFilter, 'replicate');
+img = imresize(img, .55);
+img2 = imresize(img2, .55);
+img = im2double(img);
+
+importfile(mask_filename);
+mask = cartmanMask;
+mask = imresize(mask, .55);
+[imh,imw,channels] = size(img);
+[maskh, maskw, mask_channels] = size(mask); 
+assert(imh == maskh);  %make sure mask and image are of equal height
+assert(imw == maskw);  %make sure mask and image are of equal width
+
+%Add path to Maxflow Code
+addpath('./maxflow');
+
+% Convert truecolor/grayscale images to required three-channel format
+if channels == 3
+    errMessage = 'no Error';
+elseif channels == 1
+    img = cat(3, img, img, img);
+else
+    errMessage = 'Invalid input: Image must be in RGB (triple-channel) or trueColor format'
+    break
+end
+
+if size(mask, 3) == 3
+    errMessage = 'no Error';
+elseif size(mask,3) == 1
+    mask = mask(:, :, 1);
+end
+
+%Call helper function to generate pixel-color histograms for foreground
+%and background
+%Foreground and Background are determined by input mask here
+[foreground, background, intervals] = createHistograms(img, mask);
+
+%Call helper function to build sparse graphs to input into Maxflow
+%algorithm
+[A,T] = buildGraphs(foreground, background, intervals, img);
+T = sparse(T);
+%A = A + A';
+%Call third-party Maxflow algorithm and reshape result
+[~, newMask] = maxflow(A,T);
+newMask = logical(reshape(newMask,imh,imw));
+newMask = cat(3,newMask,newMask,newMask);
+
+foreground_img = img2.*~newMask;
+background_img = img2.*newMask;
+figure
+imshow(foreground_img)
+hold on
+title('Foreground of Input based on Min-Cut/Max-Flow');
+
+figure
+title('Background of Input based on Min-Cut/Max-Flow');
+imshow(background_img);
+
+
+newMask = ~newMask;
+
+destination = imread('oldWell.jpg');
+                %read in the sample destination image
+destination = 1*im2double(destination);
+destination = imresize(destination, .5);
+
+offsetY = 30;
+offsetX = 700;
+
+[paddedIMG, paddedMASK] = padToFit(img2(:,15:end,:), newMask(:,15:end,:), destination,[offsetX,offsetY]); 
+
+
+
+final = zeros(size(destination));
+
+
+                
+figure
+imshow(poissonBlend(paddedIMG,paddedMASK,destination))
+                %Call my poissonBlend method on Image
+                %Display alpha-blended image result
+
+    
+##### SOURCE END #####
+--></body></html>
